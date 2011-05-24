@@ -36,12 +36,12 @@ Usage
 
     data = 'xxx'
     save('sample.txt', data)
-    save('sample.zip', data)
-    save('sample.tar.gz', data)
-    save('sample.tar.bz2', data)
+    save('sample.txt.zip', data)
+    save('sample.txt.tar.gz', data)
+    save('sample.txt.tar.bz2', data)
     save('sample.tar', data)
     assert load('sample.txt') == data
-    assert load('sample.zip') == data
-    assert load('sample.tar.gz') == data
-    assert load('sample.tar.bz2') == data
-    assert load('sample.tar') == data
+    assert load('sample.txt.zip') == data
+    assert load('sample.txt.tar.gz') == data
+    assert load('sample.txt.tar.bz2') == data
+    assert load('sample.txt.tar') == data
