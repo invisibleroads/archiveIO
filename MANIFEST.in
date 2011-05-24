@@ -1,0 +1,3 @@
+recursive-include archiveIO *
+include *.rst
+global-exclude *.pyc
