@@ -24,7 +24,7 @@ setup(
     author='Roy Hyunjin Han',
     author_email='service@invisibleroads.com',
     url='https://github.com/invisibleroads/archiveIO',
-    install_requires=[],
+    install_requires=['decorator'],
     packages=find_packages(),
     include_package_data=True,
     test_suite='archiveIO.tests',
