@@ -20,7 +20,7 @@ setup(
         'Programming Language :: Python',
         'License :: OSI Approved :: MIT License',
     ],
-    keywords='zip gz',
+    keywords='zip tar.gz tar.bz2 tar',
     author='Roy Hyunjin Han',
     author_email='service@invisibleroads.com',
     url='https://github.com/invisibleroads/archiveIO',
