@@ -19,7 +19,7 @@ def save(targetPath, content):
 @archiveIO.load
 def load(sourcePath):
     content = open(sourcePath, 'rt').read()
-    if os.path.basename(sourcePath) == 'backup.txt':
+    if os.path.basename(sourcePath) != sampleName:
         raise IOError
     backupPath = os.path.join(os.path.dirname(sourcePath), 'backup.txt')
     assert open(backupPath, 'rt').read() == content

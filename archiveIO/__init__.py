@@ -21,37 +21,24 @@ def save(function, *args, **kwargs):
     .zip .tar.gz .tar.bz2 .tar
     """
     targetPath = kwargs.get('targetPath', args[0])
-    targetPathLower = targetPath.lower()
-    # Try to recognize the extension,
-    for extension, make_consumer, make_generator in extensionPacks:
-        # If we have a matching extension,
-        if targetPathLower.endswith(extension):
-            break
-    # If we did not recognize the extension,
-    else:
-        # Run function as usual
+    try:
+        archive = Archive(targetPath)
+    # If we did not recognize the extension, run function as usual
+    except ArchiveError:
         return function(*args, **kwargs)
-    # Remove matching extension from filename
-    targetName = os.path.basename(targetPath[:targetPathLower.rfind(extension)])
     # Make temporaryFolder
     with TemporaryFolder() as temporaryFolder:
         # Run function in temporaryFolder
-        temporaryPath = os.path.join(temporaryFolder, targetName)
+        temporaryPath = os.path.join(temporaryFolder, archive.getName())
         function(temporaryPath, *args[1:], **kwargs)
-        # Enter consumer
-        consumer = make_consumer(targetPath)
-        consumer.next()
+        filePaths = []
         # Walk function output
         for rootPath, directories, fileNames in os.walk(temporaryFolder):
             # For each file,
             for fileName in fileNames:
-                filePath = os.path.join(rootPath, fileName)
-                relativePath = filePath[len(temporaryFolder) + 1:]
-                consumer.send((filePath, relativePath))
-        # Exit consumer
-        consumer.close()
-    # Return
-    return targetPath
+                filePaths.append(os.path.join(rootPath, fileName))
+        # Save
+        return archive.save(filePaths, temporaryFolder)
 
 
 @decorator
@@ -68,20 +55,15 @@ def load(function, *args, **kwargs):
     .zip .tar.gz .tar.bz2 .tar
     """
     sourcePath = kwargs.get('sourcePath', args[0])
-    sourcePathLower = sourcePath.lower()
-    # Try to recognize the extension,
-    for extension, make_consumer, make_generator in extensionPacks:
-        # If we have a matching extension,
-        if sourcePathLower.endswith(extension):
-            break
-    # If we did not recognize the extension,
-    else:
-        # Run function as usual
+    try:
+        archive = Archive(sourcePath)
+    # If we did not recognize the extension, run function as usual
+    except ArchiveError:
         return function(*args, **kwargs)
     # Make temporaryFolder
     with TemporaryFolder() as temporaryFolder:
-        # For each relativePath,
-        for filePath in make_generator(sourcePath, temporaryFolder):
+        # For each uncompressed filePath,
+        for filePath in archive.load(temporaryFolder):
             # Run function and exit if successful
             errors = []
             try:
@@ -90,6 +72,60 @@ def load(function, *args, **kwargs):
                 errors.append(str(error))
         else:
             raise IOError('Could not run %s on any file in %s:\n%s' % (function, sourcePath, '\n'.join(errors)))
+
+
+class Archive(object):
+    'Archive processor'
+    
+    def __init__(self, path):
+        'Prepare'
+        pathLower = path.lower()
+        # Try to recognize the extension,
+        for extension, make_consumer, make_generator in extensionPacks:
+            # If we have a matching extension, exit loop
+            if pathLower.endswith(extension):
+                break
+        # If we did not recognize the extension, raise exception
+        else:
+            raise ArchiveError('Could not recognize compression format from file extension')
+        # Remove matching extension from filename
+        name = os.path.basename(path[:pathLower.rfind(extension)])
+        # Set
+        self.__path = path
+        self.__make_consumer = make_consumer
+        self.__make_generator = make_generator
+        self.__name = name
+
+    def save(self, filePaths, basePath=''):
+        """
+        Compress filePaths using the extension specified in archivePath,
+        truncating each filePath into a relativePath using basePath.
+        """
+        # Enter consumer
+        consumer = self.__make_consumer(self.__path)
+        consumer.next()
+        # For each filePath,
+        for filePath in filePaths:
+            # Truncate filePath into relativePath
+            relativeIndex = len(basePath) + 1 if basePath else 0
+            consumer.send((filePath, filePath[relativeIndex:]))
+        # Exit consumer
+        consumer.close()
+        # Return
+        return self.__path
+
+    def load(self, targetFolder):
+        'Uncompress archivePath to a targetFolder.'
+        return self.__make_generator(self.__path, targetFolder)
+
+    def getName(self):
+        'Return archive filename after stripping file extension'
+        return self.__name
+
+
+class ArchiveError(Exception):
+    'Custom exception for archiveIO'
+    pass
 
 
 class TemporaryFolder(object):
@@ -111,6 +147,7 @@ class TemporaryFolder(object):
 def make_consumer_tar(targetPath, mode='w'):
     'Save .tar file'
     def filter_(tarInfo):
+        'Anonymize file data'
         tarInfo.uid = tarInfo.gid = 0
         tarInfo.uname = tarInfo.gname = 'root'
         return tarInfo
