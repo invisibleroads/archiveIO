@@ -101,6 +101,9 @@ class Archive(object):
         Compress filePaths using the extension specified in archivePath,
         truncating each filePath into a relativePath using basePath.
         """
+        # Convert filePaths into a list if it isn't one already
+        if not hasattr(filePaths, '__iter__'):
+            filePaths = [filePaths]
         # Enter consumer
         consumer = self.__make_consumer(self.__path)
         consumer.next()

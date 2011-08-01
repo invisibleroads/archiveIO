@@ -14,6 +14,7 @@ Usage
 -----
 ::
 
+    import os
     import archiveIO
 
     @archiveIO.save
@@ -39,9 +40,15 @@ Usage
     save('sample.txt.zip', data)
     save('sample.txt.tar.gz', data)
     save('sample.txt.tar.bz2', data)
-    save('sample.tar', data)
+    save('sample.txt.tar', data)
     assert load('sample.txt') == data
     assert load('sample.txt.zip') == data
     assert load('sample.txt.tar.gz') == data
     assert load('sample.txt.tar.bz2') == data
     assert load('sample.txt.tar') == data
+
+    archive = archiveIO.Archive('package.txt.zip')
+    archive.save('sample.txt')
+    with archiveIO.TemporaryFolder() as temporaryFolder:
+        for filePath in archive.load(temporaryFolder):
+            print filePath
