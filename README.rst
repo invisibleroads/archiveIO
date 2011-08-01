@@ -48,7 +48,13 @@ Usage
     assert load('sample.txt.tar') == data
 
     archive = archiveIO.Archive('package.txt.zip')
-    archive.save('sample.txt')
+    archive.save([
+        'sample.txt',
+        'sample.txt.zip',
+        'sample.txt.tar.gz',
+        'sample.txt.tar.bz2',
+        'sample.txt.tar',
+    ])
     with archiveIO.TemporaryFolder() as temporaryFolder:
         for filePath in archive.load(temporaryFolder):
             print filePath
