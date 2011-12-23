@@ -1,46 +1,60 @@
 'Tests for archiveIO'
+# 115, 154-157
 import os
+from glob import glob
+from cStringIO import StringIO
+from shutil import rmtree
+from unittest import TestCase
 
-import archiveIO
-
-
-sampleName = 'sample.txt'
-sampleText = '0123456789'
-
-
-@archiveIO.save
-def save(targetPath, content):
-    assert os.path.basename(targetPath) == sampleName
-    open(targetPath, 'wt').write(content)
-    backupPath = os.path.join(os.path.dirname(targetPath), 'backup.txt')
-    open(backupPath, 'wt').write(content)
+from archiveIO import Archive, ArchiveError, save, load, EXTENSION_PACKS
 
 
-@archiveIO.load
-def load(sourcePath):
-    content = open(sourcePath, 'rt').read()
-    if os.path.basename(sourcePath) != sampleName:
-        raise IOError
-    backupPath = os.path.join(os.path.dirname(sourcePath), 'backup.txt')
-    assert open(backupPath, 'rt').read() == content
-    return content
+EXTENSIONS = [x[0] for x in EXTENSION_PACKS]
+EXAMPLE_TEXT = 'xxx'
+SOURCE_FOLDER = 'archiveIO/'
+TARGET_NAME = 'example'
+TARGET_FOLDER = TARGET_NAME + '/'
 
 
-@archiveIO.load
-def load_(sourcePath):
-    raise Exception
+class TestArchiveIO(TestCase):
 
+    def tearDown(self):
+        for path in glob(TARGET_NAME + '*'):
+            if os.path.isdir(path):
+                rmtree(path)
+            else:
+                os.remove(path)
 
-def test():
-    with archiveIO.TemporaryFolder() as temporaryFolder:
-        # Test each extension
-        for extension in [''] + [x[0] for x in archiveIO.extensionPacks]:
-            archivePath = os.path.join(temporaryFolder, sampleName + extension)
-            save(archivePath, sampleText)
-            assert load(archivePath) == sampleText
-        # Test case when loading fails for each file in an archive
-        try:
-            load_(archivePath)
-            raise AssertionError
-        except IOError:
-            pass
+    def test_class(self):
+        for extension in EXTENSIONS:
+            for path in TARGET_NAME + extension, StringIO():
+                archive = Archive(path, extension=extension)
+                archive.save(SOURCE_FOLDER)
+                self.assertEqual(
+                    set(TARGET_FOLDER + x for x in glob(SOURCE_FOLDER + '*') + glob(SOURCE_FOLDER + '.*')), 
+                    set(archive.load(TARGET_FOLDER)))
+        archive = Archive(TARGET_NAME + EXTENSIONS[0])
+        archive.save(glob(SOURCE_FOLDER + '*')[0])
+        self.assertRaises(ArchiveError, Archive, TARGET_NAME, '.xxx')
+        self.assertRaises(ArchiveError, Archive, StringIO())
+        self.assertRaises(ArchiveError, Archive, TARGET_NAME + '.xxx')
+
+    def test_decorators(self):
+        @save
+        def save_(targetPath, **kw):
+            open(targetPath, 'wt').write(EXAMPLE_TEXT)
+        @load
+        def load_(sourcePath, **kw):
+            if sourcePath.endswith('.ini'):
+                raise Exception
+            return open(sourcePath, 'rt').read()
+        for targetPath in TARGET_NAME + '.txt', TARGET_NAME + '.zip':
+            save_(targetPath)
+            self.assertEqual(EXAMPLE_TEXT, load_(targetPath))
+        # Save to a file-like object
+        self.assertRaises(ArchiveError, save_, StringIO(), targetExtension='.zip')
+        save_(StringIO(), targetName=TARGET_NAME, targetExtension='.zip')
+        # Test load failure
+        targetPath = TARGET_NAME + '.ini.tar.gz'
+        save_(targetPath)
+        self.assertRaises(IOError, load_, targetPath)

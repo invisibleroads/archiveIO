@@ -14,46 +14,32 @@ Usage
 -----
 ::
 
-    import os
     import archiveIO
+    from cStringIO import StringIO
 
     @archiveIO.save
-    def save(targetPath, content):
-        'Example save function'
-        open(targetPath, 'wt').write(content)
-        # archiveIO.save() will compress everything in the folder containing targetPath
-        backupPath = os.path.join(os.path.dirname(targetPath), 'backup.txt')
-        open(backupPath, 'wt').write(content)
+    def save(targetPath):
+        open(targetPath, 'wt').write('xxx')
 
     @archiveIO.load
     def load(sourcePath):
-        'Example load function'
-        content = open(sourcePath, 'rt').read()
-        # archiveIO.load() will extract the archive to a folder and run the function on each file in the folder
-        if os.path.basename(sourcePath) == 'backup.txt': raise IOError
-        backupPath = os.path.join(os.path.dirname(sourcePath), 'backup.txt')
-        assert open(backupPath, 'rt').read() == content
-        return content
+        return open(sourcePath, 'rt').read()
 
-    data = 'xxx'
-    save('sample.txt', data)
-    save('sample.txt.zip', data)
-    save('sample.txt.tar.gz', data)
-    save('sample.txt.tar.bz2', data)
-    save('sample.txt.tar', data)
-    assert load('sample.txt') == data
-    assert load('sample.txt.zip') == data
-    assert load('sample.txt.tar.gz') == data
-    assert load('sample.txt.tar.bz2') == data
-    assert load('sample.txt.tar') == data
+    save('sample.txt')
+    save('sample.txt.zip')
+    save('sample.txt.tar.gz')
+    save('sample.txt.tar.bz2')
+    save('sample.txt.tar')
+    assert 'xxx' == load('sample.txt')
+    assert 'xxx' == load('sample.txt.zip')
+    assert 'xxx' == load('sample.txt.tar.gz')
+    assert 'xxx' == load('sample.txt.tar.bz2')
+    assert 'xxx' == load('sample.txt.tar')
 
-    archive = archiveIO.Archive('package.txt.zip')
+    archive = archiveIO.Archive(StringIO(), '.tar.gz')
     archive.save([
         'sample.txt',
         'sample.txt.zip',
-        'sample.txt.tar.gz',
-        'sample.txt.tar.bz2',
-        'sample.txt.tar',
     ])
     with archiveIO.TemporaryFolder() as temporaryFolder:
         for filePath in archive.load(temporaryFolder):

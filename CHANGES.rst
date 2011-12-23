@@ -1,3 +1,9 @@
+0.4
+---
+- Added support for file-like objects when saving or loading archives
+- Added support for folderPaths when saving archives
+- Increased test coverage to 100%
+
 0.3
 ---
 - Added Archive class
