@@ -45,12 +45,16 @@ class Archive(object):
         # Convert filePaths into a list if it isn't one already
         if not hasattr(filePaths, '__iter__'):
             filePaths = [filePaths]
-        baseIndex = len(os.path.relpath(basePath)) + 1 if basePath else 0
+        if basePath:
+            baseIndex = len(os.path.abspath(basePath)) + 1
+            truncate_basePath = lambda x: os.path.abspath(x)[baseIndex:]
+        else:
+            truncate_basePath = lambda x: x
         consumer = self.__make_consumer(self.__path)
         consumer.next()
         for filePath in expand_paths(filePaths):
-            # Truncate filePath into relativePath
-            consumer.send((filePath, os.path.relpath(filePath)[baseIndex:]))
+            relativePath = truncate_basePath(filePath)
+            consumer.send((filePath, relativePath))
         consumer.close()
         # If path is a file-like object, prepare it
         if hasattr(self.__path, 'read'):

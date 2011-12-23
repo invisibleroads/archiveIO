@@ -11,7 +11,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 setup(
     name='archiveIO',
-    version='0.4',
+    version='0.4.1',
     description='Convenience decorators for reading and writing to compressed archives',
     long_description=README + '\n\n' +  CHANGES,
     license='MIT',
