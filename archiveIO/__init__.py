@@ -177,6 +177,8 @@ def walk_paths(path):
     for rootPath, folderNames, fileNames in os.walk(path):
         for fileName in fileNames:
             yield os.path.join(rootPath, fileName)
+        else:
+            yield rootPath
 
 
 def open_tarfile(targetPath, mode):

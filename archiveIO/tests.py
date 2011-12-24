@@ -6,7 +6,7 @@ from cStringIO import StringIO
 from shutil import rmtree
 from unittest import TestCase
 
-from archiveIO import Archive, ArchiveError, save, load, EXTENSION_PACKS
+from archiveIO import Archive, ArchiveError, save, load, walk_paths, EXTENSION_PACKS
 
 
 EXTENSIONS = [x[0] for x in EXTENSION_PACKS]
@@ -31,8 +31,8 @@ class TestArchiveIO(TestCase):
                 archive = Archive(path, extension=extension)
                 archive.save(SOURCE_FOLDER)
                 self.assertEqual(
-                    set(TARGET_FOLDER + x for x in glob(SOURCE_FOLDER + '*') + glob(SOURCE_FOLDER + '.*')), 
-                    set(archive.load(TARGET_FOLDER)))
+                    set(os.path.abspath(TARGET_FOLDER + x) for x in walk_paths(SOURCE_FOLDER)),
+                    set(os.path.abspath(x) for x in archive.load(TARGET_FOLDER)))
         archive = Archive(TARGET_NAME + EXTENSIONS[0])
         archive.save(glob(SOURCE_FOLDER + '*')[0])
         self.assertRaises(ArchiveError, Archive, TARGET_NAME, '.xxx')
