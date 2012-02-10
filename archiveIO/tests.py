@@ -1,5 +1,4 @@
 'Tests for archiveIO'
-# 115, 154-157
 import os
 from glob import glob
 from cStringIO import StringIO
@@ -12,6 +11,7 @@ from archiveIO import Archive, ArchiveError, save, load, walk_paths, EXTENSION_P
 EXTENSIONS = [x[0] for x in EXTENSION_PACKS]
 EXAMPLE_TEXT = 'xxx'
 SOURCE_FOLDER = 'archiveIO/'
+SOURCE_SUBFOLDER = os.path.join(SOURCE_FOLDER, 'xxx')
 TARGET_NAME = 'example'
 TARGET_FOLDER = TARGET_NAME + '/'
 
@@ -19,6 +19,10 @@ TARGET_FOLDER = TARGET_NAME + '/'
 class TestArchiveIO(TestCase):
 
     def tearDown(self):
+        try:
+            os.rmdir(SOURCE_SUBFOLDER)
+        except OSError:
+            pass
         for path in glob(TARGET_NAME + '*'):
             if os.path.isdir(path):
                 rmtree(path)
@@ -26,6 +30,7 @@ class TestArchiveIO(TestCase):
                 os.remove(path)
 
     def test_class(self):
+        os.mkdir(SOURCE_SUBFOLDER) # Make an empty subfolder
         for extension in EXTENSIONS:
             for path in TARGET_NAME + extension, StringIO():
                 archive = Archive(path, extension=extension)

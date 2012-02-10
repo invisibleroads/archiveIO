@@ -125,7 +125,7 @@ def save(function, *args, **kw):
         # Run function in temporaryFolder
         function(os.path.join(temporaryFolder, targetName), *args[1:], **kw)
         # Save
-        return archive.save(walk_paths(temporaryFolder), temporaryFolder)
+        return archive.save(temporaryFolder, temporaryFolder)
 
 
 @decorator
@@ -167,17 +167,18 @@ def expand_paths(paths):
     for path in paths:
         if os.path.isdir(path):
             filePaths.extend(walk_paths(path))
-        else:
+        elif os.path.exists(path):
             filePaths.append(path)
     return set(filePaths)
 
 
 def walk_paths(path):
     'Yield filePaths one by one from the specified path'
+    path = os.path.abspath(path)
     for rootPath, folderNames, fileNames in os.walk(path):
         for fileName in fileNames:
             yield os.path.join(rootPath, fileName)
-        else:
+        if not folderNames and not fileNames and os.path.abspath(rootPath) != path:
             yield rootPath
 
 

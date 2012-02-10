@@ -11,7 +11,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 
 setup(
     name='archiveIO',
-    version='0.4',
+    version='0.4.1',
     description='Convenience decorators for reading and writing to compressed archives',
     long_description=README + '\n\n' +  CHANGES,
     license='MIT',
@@ -22,7 +22,7 @@ setup(
     ],
     keywords='zip tar.gz tar.bz2 tar',
     author='Roy Hyunjin Han',
-    author_email='service@invisibleroads.com',
+    author_email='starsareblueandfaraway@gmail.com',
     url='https://github.com/invisibleroads/archiveIO',
     install_requires=['decorator'],
     packages=find_packages(),

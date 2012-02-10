@@ -1,3 +1,7 @@
+0.4.1
+-----
+- Excluded extraneous '.' when saving zip archives
+
 0.4
 ---
 - Added support for file-like objects when saving or loading archives
