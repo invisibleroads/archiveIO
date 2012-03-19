@@ -1,3 +1,7 @@
+0.4.2
+-----
+- Added CustomException option to load() decorator
+
 0.4.1
 -----
 - Excluded extraneous '.' when saving zip archives

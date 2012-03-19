@@ -63,3 +63,10 @@ class TestArchiveIO(TestCase):
         targetPath = TARGET_NAME + '.ini.tar.gz'
         save_(targetPath)
         self.assertRaises(IOError, load_, targetPath)
+        # Test CustomException
+        @load(CustomException=SystemError)
+        def load_(sourcePath):
+            if sourcePath.endswith('.ini'):
+                raise Exception
+            return open(sourcePath, 'rt').read()
+        self.assertRaises(SystemError, load_, targetPath)

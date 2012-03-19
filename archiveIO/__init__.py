@@ -128,8 +128,7 @@ def save(function, *args, **kw):
         return archive.save(temporaryFolder, temporaryFolder)
 
 
-@decorator
-def load(function, *args, **kw):
+def load(function=None, CustomException=IOError):
     """
     Decorator to support loading from compressed files for functions
     whose first argument is the sourcePath
@@ -140,25 +139,36 @@ def load(function, *args, **kw):
 
     Archive format is determined by file extension:
     .zip .tar.gz .tar.bz2 .tar
+
+    @archiveIO.load # Decorator
+    def load(sourcePath):
+        return open(sourcePath).read()
+
+    @archiveIO.load(CustomException=AppError) # Function returning decorator
+    def load(sourcePath):
+        return open(sourcePath).read()
     """
-    sourcePath = kw.get('sourcePath', args[0])
-    try:
-        archive = Archive(sourcePath)
-    # If we did not recognize the extension, run function as usual
-    except ArchiveError:
-        return function(*args, **kw)
-    # Make temporaryFolder
-    with TemporaryFolder() as temporaryFolder:
-        errors = []
-        # For each uncompressed filePath,
-        for filePath in archive.load(temporaryFolder):
-            # Run function and exit if successful
-            try:
-                return function(filePath, *args[1:], **kw)
-            except Exception, error:
-                errors.append(str(error))
-        else:
-            raise IOError('Could not run %s on any file in %s:\n%s' % (function, sourcePath, '\n'.join(errors)))
+    def load(function, *args, **kw):
+        sourcePath = kw.get('sourcePath', args[0])
+        try:
+            archive = Archive(sourcePath)
+        # If we did not recognize the extension, run function as usual
+        except ArchiveError:
+            return function(*args, **kw)
+        # Make temporaryFolder
+        with TemporaryFolder() as temporaryFolder:
+            # For each uncompressed filePath,
+            for filePath in archive.load(temporaryFolder):
+                # Run function and exit if successful
+                try:
+                    return function(filePath, *args[1:], **kw)
+                except Exception, error:
+                    pass
+            raise CustomException('Could not run %s() on any file in %s' % (function.func_name, os.path.basename(sourcePath)))
+    if function:
+        return decorator(load, function)
+    else:
+        return decorator(load)
 
 
 def expand_paths(paths):
