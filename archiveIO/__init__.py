@@ -164,7 +164,7 @@ def load(function=None, CustomException=IOError):
                     return function(filePath, *args[1:], **kw)
                 except Exception, error:
                     pass
-            raise CustomException('Could not run %s() on any file in %s' % (function.func_name, os.path.basename(sourcePath)))
+            raise CustomException('Could not run %s() on any file in the archive' % function.func_name)
     if function:
         return decorator(load, function)
     else:
