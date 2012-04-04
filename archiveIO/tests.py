@@ -59,6 +59,10 @@ class TestArchiveIO(TestCase):
         # Save to a file-like object
         self.assertRaises(ArchiveError, save_, StringIO(), targetExtension='.zip')
         save_(StringIO(), targetName=TARGET_NAME, targetExtension='.zip')
+        # Test open failure
+        targetPath = TARGET_NAME + '.empty.tar.gz'
+        open(targetPath, 'wb')
+        self.assertRaises(IOError, load_, targetPath)
         # Test load failure
         targetPath = TARGET_NAME + '.ini.tar.gz'
         save_(targetPath)

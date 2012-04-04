@@ -1,3 +1,7 @@
+0.4.3
+-----
+- Added CustomException coverage if opening archive fails
+
 0.4.2
 -----
 - Added CustomException option to load() decorator

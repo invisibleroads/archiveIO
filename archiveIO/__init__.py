@@ -157,14 +157,17 @@ def load(function=None, CustomException=IOError):
             return function(*args, **kw)
         # Make temporaryFolder
         with TemporaryFolder() as temporaryFolder:
-            # For each uncompressed filePath,
-            for filePath in archive.load(temporaryFolder):
-                # Run function and exit if successful
-                try:
-                    return function(filePath, *args[1:], **kw)
-                except Exception, error:
-                    pass
-            raise CustomException('Could not run %s() on any file in the archive' % function.func_name)
+            try:
+                # For each uncompressed filePath,
+                for filePath in archive.load(temporaryFolder):
+                    # Run function and exit if successful
+                    try:
+                        return function(filePath, *args[1:], **kw)
+                    except:
+                        pass
+            except:
+                raise CustomException('Could not open archive')
+            raise CustomException('Could not load archive')
     if function:
         return decorator(load, function)
     else:
