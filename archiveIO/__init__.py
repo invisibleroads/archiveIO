@@ -4,6 +4,7 @@ import shutil
 import zipfile
 import tarfile
 import tempfile
+from collections import defaultdict
 from decorator import decorator
 
 
@@ -128,7 +129,7 @@ def save(function, *args, **kw):
         return archive.save(temporaryFolder, temporaryFolder)
 
 
-def load(function=None, CustomException=IOError):
+def load(function=None, extensions=None, CustomException=IOError):
     """
     Decorator to support loading from compressed files for functions
     whose first argument is the sourcePath
@@ -140,11 +141,16 @@ def load(function=None, CustomException=IOError):
     Archive format is determined by file extension:
     .zip .tar.gz .tar.bz2 .tar
 
-    @archiveIO.load # Decorator
+    # Try load(sourcePath) on each file in the archive until one works
+    @archiveIO.load
     def load(sourcePath):
         return open(sourcePath).read()
-
-    @archiveIO.load(CustomException=AppError) # Function returning decorator
+    # Try load(sourcePath) on TXT files and if all fail, try CSV files
+    @archiveIO.load(extensions=['.txt', '.csv'])
+    def load(sourcePath):
+        return open(sourcePath).read()
+    # Raise AppError instead of IOError
+    @archiveIO.load(CustomException=AppError)
     def load(sourcePath):
         return open(sourcePath).read()
     """
@@ -158,11 +164,12 @@ def load(function=None, CustomException=IOError):
         # Make temporaryFolder
         with TemporaryFolder() as temporaryFolder:
             try:
-                # For each uncompressed filePath,
-                for filePath in archive.load(temporaryFolder):
-                    # Run function and exit if successful
+                # Convert a disposable generator into a reusable list
+                paths = list(archive.load(temporaryFolder))
+                # For each path, run function and exit if successful
+                for path in select_extensions(paths, extensions or []):
                     try:
-                        return function(filePath, *args[1:], **kw)
+                        return function(path, *args[1:], **kw)
                     except:
                         pass
             except:
@@ -172,6 +179,18 @@ def load(function=None, CustomException=IOError):
         return decorator(load, function)
     else:
         return decorator(load)
+
+
+def select_extensions(paths, extensions):
+    'Order paths by matching file extensions or return everything'
+    pathsByExtension = defaultdict(list)
+    for path in paths:
+        extension = os.path.splitext(path)[1].lower()
+        pathsByExtension[extension].append(path)
+    selectedPaths = []
+    for extension in extensions:
+        selectedPaths.extend(sorted(pathsByExtension[extension.lower()]))
+    return selectedPaths or paths
 
 
 def expand_paths(paths):

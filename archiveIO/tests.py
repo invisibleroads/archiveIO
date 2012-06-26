@@ -5,7 +5,7 @@ from cStringIO import StringIO
 from shutil import rmtree
 from unittest import TestCase
 
-from archiveIO import Archive, ArchiveError, save, load, walk_paths, EXTENSION_PACKS
+from archiveIO import Archive, ArchiveError, save, load, select_extensions, walk_paths, EXTENSION_PACKS
 
 
 EXTENSIONS = [x[0] for x in EXTENSION_PACKS]
@@ -29,7 +29,7 @@ class TestArchiveIO(TestCase):
             else:
                 os.remove(path)
 
-    def test_class(self):
+    def test_class_works(self):
         os.mkdir(SOURCE_SUBFOLDER) # Make an empty subfolder
         for extension in EXTENSIONS:
             for path in TARGET_NAME + extension, StringIO():
@@ -44,33 +44,56 @@ class TestArchiveIO(TestCase):
         self.assertRaises(ArchiveError, Archive, StringIO())
         self.assertRaises(ArchiveError, Archive, TARGET_NAME + '.xxx')
 
-    def test_decorators(self):
+    def test_decorators_work(self):
         @save
         def save_(targetPath, **kw):
             open(targetPath, 'wt').write(EXAMPLE_TEXT)
         @load
         def load_(sourcePath, **kw):
-            if sourcePath.endswith('.ini'):
-                raise Exception
             return open(sourcePath, 'rt').read()
         for targetPath in TARGET_NAME + '.txt', TARGET_NAME + '.zip':
             save_(targetPath)
             self.assertEqual(EXAMPLE_TEXT, load_(targetPath))
         # Save to a file-like object
-        self.assertRaises(ArchiveError, save_, StringIO(), targetExtension='.zip')
-        save_(StringIO(), targetName=TARGET_NAME, targetExtension='.zip')
-        # Test open failure
-        targetPath = TARGET_NAME + '.empty.tar.gz'
-        open(targetPath, 'wb')
-        self.assertRaises(IOError, load_, targetPath)
-        # Test load failure
-        targetPath = TARGET_NAME + '.ini.tar.gz'
+        self.assertRaises(ArchiveError, save_, StringIO(), 
+            targetExtension='.zip')
+        save_(StringIO(), targetName=TARGET_NAME, 
+            targetExtension='.zip')
+
+    def test_select_extensions(self):
+        'Select file extensions'
+        self.assertEqual(['a.csv', 'b.csv', 'a.txt', 'b.txt'],
+            select_extensions(['a.csv', 'a.txt', 'b.csv', 'b.txt'], 
+                ['.csv', '.txt']))
+        targetPath = TARGET_NAME + '.zip'
+        @save
+        def save_(targetPath, **kw):
+            open((targetPath + '.txt'), 'wt')
+            open((targetPath + '.csv'), 'wt')
         save_(targetPath)
-        self.assertRaises(IOError, load_, targetPath)
-        # Test CustomException
+        @load(extensions=['.xxx', '.txt'])
+        def load_(sourcePath, **kw):
+            return sourcePath
+        self.assertEqual('.txt', os.path.splitext(load_(targetPath))[1])
+        @load(extensions=['.csv', '.txt'])
+        def load_(sourcePath, **kw):
+            return sourcePath
+        self.assertEqual('.csv', os.path.splitext(load_(targetPath))[1])
+
+    def test_raise_exception(self):
+        @save
+        def save_(targetPath, **kw):
+            open(targetPath, 'wt').write(EXAMPLE_TEXT)
         @load(CustomException=SystemError)
-        def load_(sourcePath):
+        def load_(sourcePath, **kw):
             if sourcePath.endswith('.ini'):
                 raise Exception
             return open(sourcePath, 'rt').read()
+        # Test open failure
+        targetPath = TARGET_NAME + '.empty.tar.gz'
+        open(targetPath, 'wb')
+        self.assertRaises(SystemError, load_, targetPath)
+        # Test load failure
+        targetPath = TARGET_NAME + '.ini.tar.gz'
+        save_(targetPath)
         self.assertRaises(SystemError, load_, targetPath)
