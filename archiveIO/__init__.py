@@ -10,7 +10,7 @@ from six import string_types
 
 
 class Archive(object):
-    
+
     def __init__(self, path, extension=None):
         """
         The path can be a string or file-like object.
@@ -19,12 +19,15 @@ class Archive(object):
         # If the extension is specified, use it
         if extension:
             try:
-                make_consumer, make_generator = dict(EXTENSION_PACKS)[extension.lower()]
+                make_consumer, make_generator = dict(
+                    EXTENSION_PACKS)[extension.lower()]
             except KeyError:
-                raise ArchiveError('Could not recognize file extension: %s' % extension)
+                raise ArchiveError(
+                    'Could not recognize file extension: %s' % extension)
         # If path is a file-like object, raise Exception
         elif hasattr(path, 'read'):
-            raise ArchiveError('Must specify file extension when using a file-like object')
+            raise ArchiveError(
+                'Must specify file extension when using a file-like object')
         # If path is a string, try to recognize the extension
         else:
             pathLower = path.lower()
@@ -32,7 +35,8 @@ class Archive(object):
                 if pathLower.endswith(extension):
                     break
             else:
-                raise ArchiveError('Could not recognize archive format from file extension')
+                raise ArchiveError(
+                    'Could not recognize archive format from file extension')
         # Set
         self.__path = path
         self.__extension = extension
@@ -80,15 +84,22 @@ class ArchiveError(Exception):
 
 
 class TemporaryFolder(object):
-    'Context manager that creates a temporary folder on entry and removes it on exit'
+    'Create a temporary folder on entry and remove it on exit'
 
     def __init__(self, suffix='', prefix='tmp', dir=None):
         self.suffix = suffix
         self.prefix = prefix
+        if dir is None:
+            dir = os.path.expanduser('~/.tmp')
+            try:
+                os.makedirs(dir)
+            except OSError:
+                pass
         self.dir = dir
 
     def __enter__(self):
-        self.temporaryFolder = tempfile.mkdtemp(self.suffix, self.prefix, self.dir)
+        self.temporaryFolder = tempfile.mkdtemp(
+            self.suffix, self.prefix, self.dir)
         return self.temporaryFolder
 
     def __exit__(self, type, value, traceback):
@@ -118,10 +129,12 @@ def save(function, *args, **kw):
     if not targetName:
         # If path is a file-like object, raise exception
         if hasattr(targetPath, 'read'):
-            raise ArchiveError('Must specify targetName when using a file-like object')
+            raise ArchiveError(
+                'Must specify targetName when using a file-like object')
         # If path is a string, remove matching extension from filename
         else:
-            targetName = os.path.basename(targetPath[:targetPath.lower().rfind(archive.get_extension())])
+            targetName = os.path.basename(
+                targetPath[:targetPath.lower().rfind(archive.get_extension())])
     # Make temporaryFolder
     with TemporaryFolder() as temporaryFolder:
         # Run function in temporaryFolder
@@ -211,7 +224,8 @@ def walk_paths(path):
     for rootPath, folderNames, fileNames in os.walk(path):
         for fileName in fileNames:
             yield os.path.join(rootPath, fileName)
-        if not folderNames and not fileNames and os.path.abspath(rootPath) != path:
+        if not folderNames and not fileNames and os.path.abspath(
+                rootPath) != path:
             yield rootPath
 
 
@@ -234,7 +248,8 @@ def make_consumer_tar(targetPath, mode='w'):
     with open_tarfile(targetPath, mode) as targetFile:
         while True:
             filePath, relativePath = yield
-            targetFile.add(filePath, relativePath, recursive=False, filter=filter_)
+            targetFile.add(
+                filePath, relativePath, recursive=False, filter=filter_)
 
 
 def make_consumer_tar_gz(targetPath):
