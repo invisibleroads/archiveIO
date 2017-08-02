@@ -16,7 +16,7 @@ Usage
 
     import archiveIO
     import os
-    from cStringIO import StringIO
+    from six import BytesIO
 
     # Define a function that generates archive contents
     @archiveIO.save
@@ -65,7 +65,7 @@ Usage
         print error
 
     # Compress directly into a string buffer
-    archive = archiveIO.Archive(StringIO(), '.tar.gz')
+    archive = archiveIO.Archive(BytesIO(), '.tar.gz')
     archive.save([
         'sample.txt',
         'sample.txt.zip',

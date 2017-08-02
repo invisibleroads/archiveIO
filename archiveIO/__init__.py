@@ -6,6 +6,7 @@ import tarfile
 import tempfile
 from collections import defaultdict
 from decorator import decorator
+from six import string_types
 
 
 class Archive(object):
@@ -44,7 +45,7 @@ class Archive(object):
         truncating each filePath into a relativePath using basePath.
         """
         # Convert filePaths into a list if it isn't one already
-        if not hasattr(filePaths, '__iter__'):
+        if isinstance(filePaths, string_types):
             filePaths = [filePaths]
         if basePath:
             baseIndex = len(os.path.abspath(basePath)) + 1
@@ -52,21 +53,21 @@ class Archive(object):
         else:
             truncate_basePath = lambda x: x
         consumer = self.__make_consumer(self.__path)
-        consumer.next()
+        next(consumer)
         for filePath in expand_paths(filePaths):
             relativePath = truncate_basePath(filePath)
             consumer.send((filePath, relativePath))
         consumer.close()
         # If path is a file-like object, prepare it
         if hasattr(self.__path, 'read'):
-            self.__path.reset()
+            self.__path.seek(0)
         return self.__path
 
     def load(self, targetFolder):
         'Uncompress archivePath to a targetFolder.'
         # If path is a file-like object, prepare it
         if hasattr(self.__path, 'read'):
-            self.__path.reset()
+            self.__path.seek(0)
         return self.__make_generator(self.__path, targetFolder)
 
     def get_extension(self):

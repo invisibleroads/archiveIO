@@ -1,3 +1,7 @@
+0.5.0
+-----
+- Fixed Python 3 support
+
 0.4.4
 -----
 - Added option to target file extensions for uncompressed files
